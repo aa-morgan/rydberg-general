@@ -4,7 +4,7 @@ def readme():
     with open('README.md') as f:
         return f.read()
 
-setup(name='nh3_collisions',
+setup(name='rydberg',
       version='0.0.1',
       description='Package with tools useful for analysing NH3-Rydberg atom collisions, including a simulation and ramsey fit.',
       url='',
