@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[7]:
+# In[46]:
 
 from __future__ import print_function, division
 import numpy as np
@@ -15,7 +15,7 @@ import pandas as pd
 
 # # Import data & initial guess
 
-# In[8]:
+# In[47]:
 
 def create_filepaths(numbers, pre_path):
     padded_numbers = []
@@ -30,14 +30,14 @@ def create_filepaths(numbers, pre_path):
     return padded_numbers
 
 
-# In[9]:
+# In[48]:
 
 def decayingSinModel(time, freq, T_decay, amp, phase, offset, drift):
     # Linearly decaying sinusoidal function
     return amp * np.exp(-time/T_decay) * np.sin(2*np.pi*( freq*time ) + np.radians(phase)) + offset + (drift*time)
 
 
-# In[42]:
+# In[49]:
 
 def ramsey_fit_guess_default():
     freq_guess = 5.5 # MHz
@@ -49,14 +49,19 @@ def ramsey_fit_guess_default():
     return [freq_guess, T_decay_guess, amp_guess, phase_guess, offset_guess, drift_guess]
 
 
-# In[43]:
+# In[52]:
 
 #date = '310317'
 #file_numbers = [55,60,59,58,57,56]
 #pressures = [0, 6.1E-3, 6.6E-2, 1.0E-1, 2.1E-1, 3.6E-1]
-def ramsey_fit_test(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(), crop=[0,0]):
-    file_path = "C:\data\\" + date + "\\SR" + date + "_"
-    full_paths = create_filepaths(file_numbers, file_path)
+def ramsey_fit_test(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(), eval_time=0.0, crop=[0,0], local=False):
+    if local:
+        file_path = "SR" + date + "_"
+        full_paths = create_filepaths(file_numbers, file_path)
+    else:
+        file_path = "C:\data\\" + date + "\\SR" + date + "_"
+        full_paths = create_filepaths(file_numbers, file_path)
+        
     if pressures == []: pressures = np.arange(1, len(full_paths)+1, 1)
 
     matplotlib.rcParams['figure.figsize'] = (15.0, 4.0)
@@ -88,9 +93,13 @@ def ramsey_fit_test(date, file_numbers, pressures=[], guess=ramsey_fit_guess_def
 
 # In[44]:
 
-def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(), eval_time=0.0, crop=[0,0]):
-    file_path = "C:\data\\" + date + "\\SR" + date + "_"
-    full_paths = create_filepaths(file_numbers, file_path)
+def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(), eval_time=0.0, crop=[0,0], local=False):
+    if local:
+        file_path = "SR" + date + "_"
+        full_paths = create_filepaths(file_numbers, file_path)
+    else:
+        file_path = "C:\data\\" + date + "\\SR" + date + "_"
+        full_paths = create_filepaths(file_numbers, file_path)
     
     matplotlib.rcParams['figure.figsize'] = (15.0, 4.0)
     colors = ['k','r','g','b','c','m','y']
