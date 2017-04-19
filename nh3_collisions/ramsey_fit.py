@@ -49,12 +49,13 @@ def ramsey_fit_guess_default():
     return [freq_guess, T_decay_guess, amp_guess, phase_guess, offset_guess, drift_guess]
 
 
-# In[52]:
+# In[53]:
 
 #date = '310317'
 #file_numbers = [55,60,59,58,57,56]
 #pressures = [0, 6.1E-3, 6.6E-2, 1.0E-1, 2.1E-1, 3.6E-1]
-def ramsey_fit_test(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(), eval_time=0.0, crop=[0,0], local=False):
+def ramsey_fit_test(date, file_numbers, pressures=[], pressure_errors=[], guess=ramsey_fit_guess_default(), 
+                    eval_time=0.0, crop=[0,0], local=False, figSize=(15.0, 4.0)):
     if local:
         file_path = "SR" + date + "_"
         full_paths = create_filepaths(file_numbers, file_path)
@@ -64,7 +65,7 @@ def ramsey_fit_test(date, file_numbers, pressures=[], guess=ramsey_fit_guess_def
         
     if pressures == []: pressures = np.arange(1, len(full_paths)+1, 1)
 
-    matplotlib.rcParams['figure.figsize'] = (15.0, 4.0)
+    matplotlib.rcParams['figure.figsize'] = figSize
     min_time, max_time = 0, 0
     for i, path in enumerate(full_paths):
         data = np.loadtxt(path)
@@ -91,9 +92,10 @@ def ramsey_fit_test(date, file_numbers, pressures=[], guess=ramsey_fit_guess_def
 
 # # Fit sinusoidal waveforms
 
-# In[44]:
+# In[54]:
 
-def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(), eval_time=0.0, crop=[0,0], local=False):
+def ramsey_fit(date, file_numbers, pressures=[], pressure_errors=[], guess=ramsey_fit_guess_default(),
+               eval_time=0.0, crop=[0,0], local=False, figSize=(15.0, 4.0)):
     if local:
         file_path = "SR" + date + "_"
         full_paths = create_filepaths(file_numbers, file_path)
@@ -105,10 +107,11 @@ def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(
     colors = ['k','r','g','b','c','m','y']
     params = ['Frequency', 'T decay', 'Amplitude', 'Initial phase', 'Offset', 'Drift']
     if pressures == []: pressures = np.arange(1, len(full_paths)+1, 1)
+    if pressure_errors == []: pressure_errors = np.zeros(len(full_paths))
         
     popts = []
     perrs = []
-    df = pd.DataFrame(columns=['Pressure', *params, *[p + ' error' for p in params]])
+    df = pd.DataFrame(columns=['Pressure', 'Pressure error', *params, *[p + ' error' for p in params]])
     min_time, max_time = 0, 0
     for i, path in enumerate(full_paths):
         data = np.loadtxt(path)
@@ -125,8 +128,8 @@ def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(
         popts = np.concatenate((popts, popt), axis=0)
         perrs = np.concatenate((perrs, perr), axis=0)
 
-        df.loc[i] = [pressures[i], *popt, *perr]
-        matplotlib.rcParams['figure.figsize'] = (15.0, 4.0)
+        df.loc[i] = [pressures[i], pressure_errors[i], *popt, *perr]
+        matplotlib.rcParams['figure.figsize'] = figSize
 
         timeSteps = np.linspace(min_time, max_time, 1000)
         p_g_fit = decayingSinModel(timeSteps, *popt)
@@ -134,8 +137,7 @@ def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(
         plt.plot(timeSteps, p_g_fit, '--', lw=2, color=colors[np.mod(i, len(colors))], alpha=1.0)
 
     plt.xlabel('Time ($\mu s$)')
-    plt.ylabel('Ground state probability, $P_g$ (arb. units)')
-    plt.title('$P_g$ fit')
+    plt.ylabel('Excited state probability, $P_e$ (arb. units)')
     plt.grid()
     plt.legend(title='Pressure (mbar)')
 
@@ -150,8 +152,10 @@ def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(
     if eval_time != 0.0: plt.axvline(x=eval_time, color='r', linestyle='--')
 
     df['Phase shift /t'] = diff_phase
+    ref_error = df['Frequency error'][0]
+    df['Phase shift /t error'] = ((df['Frequency error']**2 + ref_error**2)**0.5)*360
     if eval_time != 0.0: df['Phase shift at T'] = diff_eval_phase
-    columns = ['Pressure', *list(np.array([[p, p + ' error'] for p in params]).flatten()), 'Phase shift /t']
+    columns = ['Pressure', 'Pressure error', *list(np.array([[p, p + ' error'] for p in params]).flatten()), 'Phase shift /t', 'Phase shift /t error']
     if eval_time != 0.0: columns = [*columns, 'Phase shift at T']
     return df[columns]
     
@@ -159,9 +163,11 @@ def ramsey_fit(date, file_numbers, pressures=[], guess=ramsey_fit_guess_default(
 #df
 
 
-# In[45]:
+# In[55]:
 
-def ramsey_plot_pressure_phase(df):
+def ramsey_plot_pressure_phase(df, figSize=(15.0, 4.0)):
+    matplotlib.rcParams['figure.figsize'] = figSize
+    
     plt.plot(df['Pressure'], df['Phase shift /t'], 'o--')
     plt.title('Phase shift vs. pressure')
     plt.xlabel('Pressure, (mbar)')
