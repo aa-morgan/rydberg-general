@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[46]:
+# In[1]:
 
 from __future__ import print_function, division
 import numpy as np
@@ -15,7 +15,7 @@ import pandas as pd
 
 # # Import data & initial guess
 
-# In[47]:
+# In[2]:
 
 def create_filepaths(numbers, pre_path):
     padded_numbers = []
@@ -30,32 +30,32 @@ def create_filepaths(numbers, pre_path):
     return padded_numbers
 
 
-# In[48]:
+# In[3]:
 
 def decayingSinModel(time, freq, T_decay, amp, phase, offset, drift):
     # Linearly decaying sinusoidal function
     return amp * np.exp(-time/T_decay) * np.sin(2*np.pi*( freq*time ) + np.radians(phase)) + offset + (drift*time)
 
 
-# In[49]:
+# In[30]:
 
 def ramsey_fit_guess_default():
-    freq_guess = 5.5 # MHz
-    T_decay_guess = 4.0 # us
-    amp_guess = 0.2
-    phase_guess = 120
-    offset_guess = -0.7
+    freq_guess = 5.0 # MHz
+    T_decay_guess = 1.0 # us
+    amp_guess = 0.5
+    phase_guess = 180
+    offset_guess = 0.5
     drift_guess = 0.0
     return [freq_guess, T_decay_guess, amp_guess, phase_guess, offset_guess, drift_guess]
 
 
-# In[53]:
+# In[31]:
 
-#date = '310317'
-#file_numbers = [55,60,59,58,57,56]
-#pressures = [0, 6.1E-3, 6.6E-2, 1.0E-1, 2.1E-1, 3.6E-1]
+#date = '120417'
+#file_numbers = [1, 28]
+#pressures = [0, 0.335]
 def ramsey_fit_test(date, file_numbers, pressures=[], pressure_errors=[], guess=ramsey_fit_guess_default(), 
-                    eval_time=0.0, crop=[0,0], local=False, figSize=(15.0, 4.0)):
+                    eval_time=0.0, crop=[0,0], local=False, figSize=(15.0, 4.0), normalise=False):
     if local:
         file_path = "SR" + date + "_"
         full_paths = create_filepaths(file_numbers, file_path)
@@ -73,6 +73,9 @@ def ramsey_fit_test(date, file_numbers, pressures=[], pressure_errors=[], guess=
         time = time[crop[0]:len(time)-crop[1]]
         p_g = data[:,4] * 1E9
         p_g = p_g[crop[0]:len(p_g)-crop[1]]
+        if normalise: 
+            p_g = p_g - np.min(p_g)
+            p_g = p_g / np.max(p_g)
         
         min_time = np.min([min_time, np.min(time)])
         max_time = np.max([max_time, np.max(time)])
@@ -87,15 +90,15 @@ def ramsey_fit_test(date, file_numbers, pressures=[], pressure_errors=[], guess=
     plt.grid()
     plt.legend(title='Pressue (mbar)')
 
-#ramsey_fit_test(date, file_numbers, pressures)
+#ramsey_fit_test(date, file_numbers, pressures, local=True, normalise=True)
 
 
 # # Fit sinusoidal waveforms
 
-# In[54]:
+# In[32]:
 
 def ramsey_fit(date, file_numbers, pressures=[], pressure_errors=[], guess=ramsey_fit_guess_default(),
-               eval_time=0.0, crop=[0,0], local=False, figSize=(15.0, 4.0)):
+               eval_time=0.0, crop=[0,0], local=False, figSize=(15.0, 4.0), normalise=False):
     if local:
         file_path = "SR" + date + "_"
         full_paths = create_filepaths(file_numbers, file_path)
@@ -119,6 +122,9 @@ def ramsey_fit(date, file_numbers, pressures=[], pressure_errors=[], guess=ramse
         time = time[crop[0]:len(time)-crop[1]]
         p_g = data[:,4] * 1E9
         p_g = p_g[crop[0]:len(p_g)-crop[1]]
+        if normalise: 
+            p_g = p_g - np.min(p_g)
+            p_g = p_g / np.max(p_g)
         
         min_time = np.min([min_time, np.min(time)])
         max_time = np.max([max_time, np.max(time)])
@@ -159,21 +165,8 @@ def ramsey_fit(date, file_numbers, pressures=[], pressure_errors=[], guess=ramse
     if eval_time != 0.0: columns = [*columns, 'Phase shift at T']
     return df[columns]
     
-#df = ramsey_fit(date, file_numbers, pressures, crop=[1,9])
+#df = ramsey_fit(date, file_numbers, pressures, crop=[1,40], local=True, normalise=True)
 #df
-
-
-# In[55]:
-
-def ramsey_plot_pressure_phase(df, figSize=(15.0, 4.0)):
-    matplotlib.rcParams['figure.figsize'] = figSize
-    
-    plt.plot(df['Pressure'], df['Phase shift /t'], 'o--')
-    plt.title('Phase shift vs. pressure')
-    plt.xlabel('Pressure, (mbar)')
-    plt.ylabel('Phase shift per $\mu s$')
-    plt.grid()
-#ramsey_plot_pressure_phase(df)
 
 
 # In[ ]:
